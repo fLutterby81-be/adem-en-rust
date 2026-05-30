@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adem & Rust</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f2027">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root {
+    --bg-1: #0f2027; --bg-2: #203a43; --bg-3: #2c5364;
+    --accent: #64d8cb; --text: #ffffff;
+    --panel-bg: rgba(255,255,255,0.08);
+    --circle-border: rgba(255,255,255,0.4);
+    --circle-gradient-1: rgba(255,255,255,0.15);
+    --circle-gradient-2: rgba(255,255,255,0.05);
+    --btn-bg: rgba(255,255,255,0.1);
+    --shadow: rgba(0,0,0,0.2);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
+    min-height:100vh; color:var(--text);
+    display:flex; flex-direction:column; align-items:center;
+    padding:20px; transition: background 1s ease;
+}
+h1 { margin:15px 0 5px; font-weight:300; letter-spacing:3px; font-size:2rem; }
+.subtitle { font-size:1rem; opacity:0.8; margin-bottom:12px; }
+
+.top-bar { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap; justify-content:center; }
+.theme-selector { display:flex; gap:10px; }
+.theme-dot { width:32px; height:32px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition: transform .3s; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+.theme-dot:hover { transform:scale(1.15); }
+.theme-dot.active { border-color:#fff; transform:scale(1.2); }
+
+.lang-selector { display:flex; gap:6px; align-items:center; }
+.lang-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:0.75rem; font-weight:700; transition:all .3s; display:flex; align-items:center; justify-content:center; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); }
+.lang-btn.active { background:var(--accent); color:#0f2027; border-color:var(--accent); }
+
+.sound-toggle { display:flex; align-items:center; gap:8px; background:var(--btn-bg); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:8px 16px; border-radius:25px; cursor:pointer; font-size:0.9rem; transition:all .3s; user-select:none; }
+.sound-toggle.active { background:rgba(255,255,255,0.25); border-color:#fff; }
+
+.nav-tabs { display:flex; gap:8px; margin-bottom:18px; }
+.nav-tab { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px 28px; border-radius:30px; cursor:pointer; font-size:0.95rem; transition:all .3s; }
+.nav-tab:hover { background:rgba(255,255,255,0.18); }
+.nav-tab.active { background:rgba(255,255,255,0.3); border-color:#fff; font-weight:600; }
+
+.view { width:100%; max-width:480px; display:none; flex-direction:column; align-items:center; }
+.view.active { display:flex; }
+
+.technique-selector { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:20px; }
+.technique-btn { background:var(--btn-bg); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:12px 22px; border-radius:25px; cursor:pointer; transition:all .3s; font-size:0.95rem; }
+.technique-btn:hover, .technique-btn.active { background:rgba(255,255,255,0.25); border-color:#fff; transform:translateY(-2px); }
+
+.main-stage { position:relative; width:300px; height:300px; display:flex; justify-content:center; align-items:center; margin:8px 0; }
+.orb { position:absolute; border-radius:50%; background:radial-gradient(circle, var(--circle-gradient-1), var(--circle-gradient-2)); border:3px solid var(--circle-border); width:110px; height:110px; transition:transform .1s linear, box-shadow .3s; display:flex; justify-content:center; align-items:center; box-shadow: 0 0 40px var(--circle-gradient-1); }
+.orb-face { font-size:2.5rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.orb-breathing .orb-face { animation: gentleBob 2s ease-in-out infinite; }
+@keyframes gentleBob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+.timer-ring { position:absolute; width:260px; height:260px; border-radius:50%; border:3px solid rgba(255,255,255,0.15); }
+.timer-progress { position:absolute; width:260px; height:260px; border-radius:50%; border:3px solid transparent; border-top-color:var(--accent); transition:transform .1s linear; }
+.timer-display { font-size:3.5rem; font-weight:200; margin:8px 0; min-height:70px; color:var(--accent); text-shadow:0 0 20px rgba(100,216,203,0.3); }
+.instruction { font-size:1.2rem; font-weight:400; margin-bottom:6px; text-align:center; max-width:420px; min-height:30px; }
+.phase-label { font-size:0.9rem; opacity:0.7; margin-bottom:20px; text-transform:uppercase; letter-spacing:2px; }
+.controls { display:flex; gap:15px; margin-bottom:10px; }
+.control-btn { background:#fff; color:var(--bg-1); border:none; padding:16px 40px; border-radius:50px; font-size:1.05rem; cursor:pointer; transition:transform .2s, box-shadow .2s; font-weight:700; letter-spacing:1px; box-shadow:0 4px 15px var(--shadow); }
+.control-btn:hover { transform:translateY(-3px); box-shadow:0 8px 25px var(--shadow); }
+.control-btn:active { transform:scale(0.95); }
+.cycle-counter { font-size:1rem; opacity:0.8; margin:8px 0; }
+.mini-streak { display:flex; align-items:center; gap:8px; font-size:0.9rem; opacity:0.85; margin-bottom:10px; }
+.info-panel { background:var(--panel-bg); border-radius:20px; padding:22px; width:100%; margin-top:16px; line-height:1.7; font-size:0.97rem; border:1px solid rgba(255,255,255,0.1); }
+.info-panel h3 { margin-bottom:10px; font-weight:500; font-size:1.15rem; color:var(--accent); }
+.reminder-msg { width:100%; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); border-radius:14px; padding:14px 18px; margin-top:10px; font-size:0.95rem; display:none; }
+.reminder-msg.show { display:block; animation:popIn .4s ease; }
+@keyframes popIn { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+
+.stats-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:100%; margin-bottom:18px; }
+.stat-card { background:var(--panel-bg); border-radius:16px; padding:18px 10px; text-align:center; border:1px solid rgba(255,255,255,0.1); transition:transform .2s; }
+.stat-card:hover { transform:translateY(-3px); }
+.stat-number { font-size:2rem; font-weight:300; color:var(--accent); display:block; margin-bottom:4px; }
+.stat-label { font-size:0.85rem; opacity:0.85; }
+.week-chart { width:100%; background:var(--panel-bg); border-radius:20px; padding:20px; margin-bottom:18px; border:1px solid rgba(255,255,255,0.1); }
+.week-chart h4 { margin-bottom:14px; font-weight:400; font-size:1.05rem; color:var(--accent); }
+.chart-bars { display:flex; align-items:flex-end; justify-content:space-between; height:140px; gap:8px; }
+.bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.bar { width:100%; background:linear-gradient(to top, var(--accent), rgba(255,255,255,0.3)); border-radius:8px; transition:height .5s ease; min-height:4px; }
+.bar-label { font-size:0.75rem; opacity:0.8; }
+.bar-val { font-size:0.7rem; opacity:0.9; font-weight:600; }
+
+.reminder-panel { width:100%; background:var(--panel-bg); border-radius:20px; padding:20px; margin-bottom:18px; border:1px solid rgba(255,255,255,0.1); }
+.reminder-panel h4 { margin-bottom:14px; font-weight:400; font-size:1.05rem; color:var(--accent); }
+.reminder-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+.reminder-row label { font-size:0.95rem; opacity:0.9; }
+.reminder-row input[type="time"] { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:8px 12px; border-radius:10px; font-size:1rem; }
+.toggle-switch { width:44px; height:24px; background:rgba(255,255,255,0.2); border-radius:12px; position:relative; cursor:pointer; transition:background .3s; }
+.toggle-switch.on { background:var(--accent); }
+.toggle-switch::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:3px; left:3px; transition:transform .3s; }
+.toggle-switch.on::after { transform:translateX(20px); }
+
+.stars { position:fixed; width:100%; height:100%; pointer-events:none; overflow:hidden; top:0; left:0; z-index:-1; }
+.star { position:absolute; background:white; border-radius:50%; opacity:0.3; animation:twinkle 3s infinite ease-in-out; }
+@keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(1);} 50%{opacity:0.6;transform:scale(1.2);} }
+.particle { position:absolute; border-radius:50%; background:var(--accent); opacity:0.2; pointer-events:none; animation:float 8s infinite ease-in-out; }
+@keyframes float { 0%,100%{transform:translateY(0) translateX(0);} 33%{transform:translateY(-20px) translateX(10px);} 66%{transform:translateY(10px) translateX(-10px);} }
+
+@media(max-width:480px){
+    .main-stage{width:250px;height:250px;} .timer-ring,.timer-progress{width:220px;height:220px;}
+    .timer-display{font-size:3rem;} h1{font-size:1.6rem;} .technique-btn{padding:10px 16px;font-size:0.85rem;}
+    .stats-grid{grid-template-columns: repeat(2, 1fr);}
+}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<h1 id="appTitle">Adem & Rust</h1>
+<p class="subtitle" id="appSubtitle">Rustig ademen, ontspannen lichaam</p>
+
+<div class="top-bar">
+    <div class="theme-selector">
+        <div class="theme-dot active" data-theme="ocean" style="background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);" title="Oceaan"></div>
+        <div class="theme-dot" data-theme="sunset" style="background:linear-gradient(135deg,#ff512f,#dd2476);" title="Zonsondergang"></div>
+        <div class="theme-dot" data-theme="forest" style="background:linear-gradient(135deg,#134e5e,#71b280);" title="Bos"></div>
+        <div class="theme-dot" data-theme="night" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);" title="Nacht"></div>
+        <div class="theme-dot" data-theme="candy" style="background:linear-gradient(135deg,#ff9a9e,#fecfef);" title="Snoep"></div>
+        <div class="theme-dot" data-theme="lavender" style="background:linear-gradient(135deg,#667eea,#764ba2);" title="Lavendel"></div>
+    </div>
+    <div class="lang-selector">
+        <div class="lang-btn active" data-lang="nl">NL</div>
+        <div class="lang-btn" data-lang="en">EN</div>
+        <div class="lang-btn" data-lang="fr">FR</div>
+        <div class="lang-btn" data-lang="de">DE</div>
+        <div class="lang-btn" data-lang="es">ES</div>
+    </div>
+    <div class="sound-toggle" id="soundToggle"><span class="icon">🔇</span><span class="label" id="soundLabel">Geluid uit</span></div>
+</div>
+
+<div class="nav-tabs">
+    <div class="nav-tab active" data-view="breathe" id="tabBreathe">Oefenen</div>
+    <div class="nav-tab" data-view="stats" id="tabStats">Statistieken</div>
+</div>
+
+<div class="view active" id="view-breathe">
+    <div class="mini-streak" id="miniStreak"><span class="fire">🔥</span><span id="streakText">Laden...</span></div>
+    <div class="technique-selector">
+        <button class="technique-btn active" data-technique="4-7-8" id="btn478">4-7-8 Slaap</button>
+        <button class="technique-btn" data-technique="box" id="btnBox">Box Breathing</button>
+        <button class="technique-btn" data-technique="equal" id="btnEqual">Gelijke Adem</button>
+        <button class="technique-btn" data-technique="coherent" id="btnCoherent">Coherent 5-5</button>
+    </div>
+    <div class="main-stage">
+        <div class="timer-ring"></div>
+        <div class="timer-progress" id="timerProgress"></div>
+        <div class="orb" id="breathOrb"><div class="orb-face" id="orbFace">🌊</div></div>
+    </div>
+    <div class="timer-display" id="timer">0</div>
+    <div class="instruction" id="instruction">Kies een thema en techniek, dan druk je op Start</div>
+    <div class="phase-label" id="phaseLabel">KLAAR</div>
+    <div class="controls">
+        <button class="control-btn" id="startBtn">Start</button>
+        <button class="control-btn" id="stopBtn" style="display:none;">Stop</button>
+    </div>
+    <div class="cycle-counter" id="cycleCounter">Cyclus: 0 / 6</div>
+    <div class="info-panel" id="infoPanel">
+        <h3 id="infoTitle">4-7-8 Ademhaling</h3>
+        <p id="infoDesc">Ontwikkeld door Dr. Andrew Weil. Een natuurlijk kalmeringsmiddel voor het zenuwstelsel. Adem 4 seconden in door je neus, houd 7 seconden vast, en adem 8 seconden uit door je mond.</p>
+    </div>
+    <div class="reminder-msg" id="reminderMsg">⏰ Tijd voor je ademhalingsoefening!</div>
+</div>
+
+<div class="view" id="view-stats">
+    <div class="stats-grid">
+        <div class="stat-card"><span class="stat-number" id="statTotalCycles">0</span><span class="stat-label" id="lblTotalCycles">Totaal cycli</span></div>
+        <div class="stat-card"><span class="stat-number" id="statTotalSessions">0</span><span class="stat-label" id="lblTotalSessions">Totaal sessies</span></div>
+        <div class="stat-card"><span class="stat-number" id="statStreak">0</span><span class="stat-label" id="lblStreak">Dagen op rij</span></div>
+        <div class="stat-card"><span class="stat-number" id="statToday">0</span><span class="stat-label" id="lblToday">Vandaag</span></div>
+        <div class="stat-card"><span class="stat-number" id="statWeek">0</span><span class="stat-label" id="lblWeek">Deze week</span></div>
+        <div class="stat-card"><span class="stat-number" id="statLast">-</span><span class="stat-label" id="lblLast">Laatste sessie</span></div>
+    </div>
+    <div class="week-chart">
+        <h4 id="chartTitle">Afgelopen 7 dagen</h4>
+        <div class="chart-bars" id="chartBars"></div>
+    </div>
+    <div class="reminder-panel">
+        <h4 id="reminderTitle">⏰ Herinnering</h4>
+        <div class="reminder-row">
+            <label id="reminderLabel">Dagelijkse herinnering om</label>
+            <input type="time" id="reminderTime" value="20:00">
+            <div class="toggle-switch" id="reminderToggle"></div>
+        </div>
+        <p style="font-size:0.85rem; opacity:0.7; margin-top:8px;" id="reminderNote">De app toont een melding wanneer deze openstaat op het gekozen tijdstip.</p>
+    </div>
+    <div class="info-panel">
+        <h3 id="progressTitle">Jouw voortgang</h3>
+        <p id="progressDesc">Blijf consistent om de meeste voordelen te ervaren. Zelfs 3 minuten per dag helpt al bij stressvermindering en betere slaap.</p>
+    </div>
+</div>
+
+<script>
+(function(){
+const LS = { stats:'ar_stats_v3', reminder:'ar_reminder_v3', lang:'ar_lang_v3' };
+
+const i18n = {
+    nl: {
+        appSubtitle: "Rustig ademen, ontspannen lichaam",
+        tabBreathe: "Oefenen", tabStats: "Statistieken",
+        btn478: "4-7-8 Slaap", btnBox: "Box Breathing", btnEqual: "Gelijke Adem", btnCoherent: "Coherent 5-5",
+        startBtn: "Start", stopBtn: "Stop",
+        soundOn: "Geluid aan", soundOff: "Geluid uit",
+        ready: "KLAAR", readyInstruction: "Kies een thema en techniek, dan druk je op Start",
+        lblTotalCycles: "Totaal cycli", lblTotalSessions: "Totaal sessies", lblStreak: "Dagen op rij", lblToday: "Vandaag", lblWeek: "Deze week", lblLast: "Laatste sessie",
+        chartTitle: "Afgelopen 7 dagen",
+        reminderTitle: "⏰ Herinnering", reminderLabel: "Dagelijkse herinnering om", reminderNote: "De app toont een melding wanneer deze openstaat op het gekozen tijdstip.",
+        progressTitle: "Jouw voortgang", progressDesc: "Blijf consistent om de meeste voordelen te ervaren. Zelfs 3 minuten per dag helpt al bij stressvermindering en betere slaap.",
+        reminderMsg: "⏰ Tijd voor je ademhalingsoefening!",
+        cycleText: (c,total) => `Cyclus: ${c} / ${total}`,
+        streak0: "Begin vandaag je streak!", streakActive: s => `${s} dag${s>1?'en':''} op rij 🔥`, streakPaused: s => `${s} dag${s>1?'en':''} op rij (doe vandaag een sessie!)`,
+        done: "Oefening voltooid. Goed gedaan! 🎉", doneLabel: "KLAAR!",
+        phases: {
+            inhale: "INADEMEN", hold: "VASTHOUDEN", exhale: "UITADEMEN", pause: "PAUZE",
+            inhaleInstr: "Adem rustig in door je neus", holdInstr: "Houd je adem vast", exhaleInstr: "Adem volledig uit door je mond",
+            inhaleInstrBox: "Adem in (4 sec)", holdInstrBox: "Houd vast (4 sec)", exhaleInstrBox: "Adem uit (4 sec)", pauseInstr: "Pauze (4 sec)",
+            inhaleInstrEqual: "Adem gelijkmatig in", exhaleInstrEqual: "Adem gelijkmatig uit",
+            inhaleInstrCoherent: "Langzaam inademen (5 sec)", exhaleInstrCoherent: "Langzaam uitademen (5 sec)"
+        },
+        techniques: {
+            '4-7-8': { name: "4-7-8 Slaap", desc: "Ontwikkeld door Dr. Andrew Weil. Een natuurlijk kalmeringsmiddel voor het zenuwstelsel. Adem 4 seconden in door je neus, houd 7 seconden vast, en adem 8 seconden uit door je mond. Herhaal 4 tot 8 cycli." },
+            'box': { name: "Box Breathing", desc: "Gebruikt door Navy SEALs voor focus onder druk. Een vierkant patroon van 4 seconden in, 4 vast, 4 uit, 4 pauze. Helpt bij stressmanagement en concentratie." },
+            'equal': { name: "Gelijke Adem", desc: "Sama Vritti in yoga. Balanceert lichaam en geest door gelijke in- en uitademing. Ideaal voor beginners en dagelijkse ontspanning." },
+            'coherent': { name: "Coherent 5-5", desc: "Coherente ademhaling op 5-5 ritme. Brengt hartslag en ademhaling in harmonie voor optimale ontspanning en hartcoherentie." }
+        }
+    },
+    en: {
+        appSubtitle: "Breathe calmly, relax the body",
+        tabBreathe: "Practice", tabStats: "Statistics",
+        btn478: "4-7-8 Sleep", btnBox: "Box Breathing", btnEqual: "Equal Breath", btnCoherent: "Coherent 5-5",
+        startBtn: "Start", stopBtn: "Stop",
+        soundOn: "Sound on", soundOff: "Sound off",
+        ready: "READY", readyInstruction: "Choose a theme and technique, then press Start",
+        lblTotalCycles: "Total cycles", lblTotalSessions: "Total sessions", lblStreak: "Day streak", lblToday: "Today", lblWeek: "This week", lblLast: "Last session",
+        chartTitle: "Last 7 days",
+        reminderTitle: "⏰ Reminder", reminderLabel: "Daily reminder at", reminderNote: "The app shows a notification when open at the chosen time.",
+        progressTitle: "Your progress", progressDesc: "Stay consistent for maximum benefits. Even 3 minutes per day helps reduce stress and improve sleep.",
+        reminderMsg: "⏰ Time for your breathing exercise!",
+        cycleText: (c,total) => `Cycle: ${c} / ${total}`,
+        streak0: "Start your streak today!", streakActive: s => `${s} day${s>1?'s':''} in a row 🔥`, streakPaused: s => `${s} day${s>1?'s':''} in a row (do a session today!)",
+        done: "Exercise complete. Well done! 🎉", doneLabel: "DONE!",
+        phases: {
+            inhale: "INHALE", hold: "HOLD", exhale: "EXHALE", pause: "PAUSE",
+            inhaleInstr: "Breathe in gently through your nose", holdInstr: "Hold your breath", exhaleInstr: "Exhale fully through your mouth",
+            inhaleInstrBox: "Breathe in (4 sec)", holdInstrBox: "Hold (4 sec)", exhaleInstrBox: "Breathe out (4 sec)", pauseInstr: "Pause (4 sec)",
+            inhaleInstrEqual: "Breathe in evenly", exhaleInstrEqual: "Breathe out evenly",
+            inhaleInstrCoherent: "Breathe in slowly (5 sec)", exhaleInstrCoherent: "Breathe out slowly (5 sec)"
+        },
+        techniques: {
+            '4-7-8': { name: "4-7-8 Sleep", desc: "Developed by Dr. Andrew Weil. A natural tranquilizer for the nervous system. Inhale through your nose for 4 seconds, hold for 7, and exhale through your mouth for 8. Repeat 4 to 8 cycles." },
+            'box': { name: "Box Breathing", desc: "Used by Navy SEALs for focus under pressure. A square pattern of 4 seconds in, 4 hold, 4 out, 4 pause. Helps with stress management and concentration." },
+            'equal': { name: "Equal Breath", desc: "Sama Vritti in yoga. Balances body and mind through equal inhalation and exhalation. Ideal for beginners and daily relaxation." },
+            'coherent': { name: "Coherent 5-5", desc: "Coherent breathing at a 5-5 rhythm. Brings heart rate and breathing into harmony for optimal relaxation and heart coherence." }
+        }
+    },
+    fr: {
+        appSubtitle: "Respirez calmement, detendez le corps",
+        tabBreathe: "Pratiquer", tabStats: "Statistiques",
+        btn478: "4-7-8 Sommeil", btnBox: "Box Breathing", btnEqual: "Respiration egale", btnCoherent: "Coherent 5-5",
+        startBtn: "Demarrer", stopBtn: "Arreter",
+        soundOn: "Son active", soundOff: "Son desactive",
+        ready: "PRET", readyInstruction: "Choisissez un theme et une technique, puis appuyez sur Demarrer",
+        lblTotalCycles: "Cycles totaux", lblTotalSessions: "Sessions totales", lblStreak: "Jours consecutifs", lblToday: "Aujourd'hui", lblWeek: "Cette semaine", lblLast: "Derniere session",
+        chartTitle: "7 derniers jours",
+        reminderTitle: "⏰ Rappel", reminderLabel: "Rappel quotidien a", reminderNote: "L'application affiche une notification lorsqu'elle est ouverte a l'heure choisie.",
+        progressTitle: "Votre progression", progressDesc: "Restez constant pour obtenir les meilleurs benefices. Meme 3 minutes par jour aident a reduire le stress et ameliorer le sommeil.",
+        reminderMsg: "⏰ C'est l'heure de votre exercice de respiration !",
+        cycleText: (c,total) => `Cycle : ${c} / ${total}`,
+        streak0: "Commencez votre serie aujourd'hui !", streakActive: s => `${s} jour${s>1?'s':''} consecutif${s>1?'s':''} 🔥`, streakPaused: s => `${s} jour${s>1?'s':''} consecutif${s>1?'s':''} (faites une session aujourd'hui !)`,
+        done: "Exercice termine. Bravo ! 🎉", doneLabel: "TERMINE !",
+        phases: {
+            inhale: "INSPIRER", hold: "RETENIR", exhale: "EXPIRER", pause: "PAUSE",
+            inhaleInstr: "Inspirez calmement par le nez", holdInstr: "Retenez votre souffle", exhaleInstr: "Expirez completement par la bouche",
+            inhaleInstrBox: "Inspirez (4 sec)", holdInstrBox: "Retenez (4 sec)", exhaleInstrBox: "Expirez (4 sec)", pauseInstr: "Pause (4 sec)",
+            inhaleInstrEqual: "Inspirez regulierement", exhaleInstrEqual: "Expirez regulierement",
+            inhaleInstrCoherent: "Inspirez lentement (5 sec)", exhaleInstrCoherent: "Expirez lentement (5 sec)"
+        },
+        techniques: {
+            '4-7-8': { name: "4-7-8 Sommeil", desc: "Developpe par le Dr Andrew Weil. Un tranquillisant naturel pour le systeme nerveux. Inspirez par le nez pendant 4 secondes, retenez pendant 7, et expirez par la bouche pendant 8. Repetez 4 a 8 cycles." },
+            'box': { name: "Box Breathing", desc: "Utilise par les Navy SEALs pour la concentration sous pression. Un motif carre : 4 secondes inspiration, 4 retention, 4 expiration, 4 pause. Aide a gerer le stress et a se concentrer." },
+            'equal': { name: "Respiration egale", desc: "Sama Vritti dans le yoga. Equilibre le corps et l'esprit par une inspiration et expiration egales. Ideal pour les debutants et la relaxation quotidienne." },
+            'coherent': { name: "Coherent 5-5", desc: "Respiration coherente en rythme 5-5. Met le rythme cardiaque et respiratoire en harmonie pour une relaxation optimale et une coherence cardiaque." }
+        }
+    },
+    de: {
+        appSubtitle: "Ruhig atmen, Korper entspannen",
+        tabBreathe: "Uben", tabStats: "Statistiken",
+        btn478: "4-7-8 Schlaf", btnBox: "Box Breathing", btnEqual: "Gleichmassig", btnCoherent: "Koharent 5-5",
+        startBtn: "Start", stopBtn: "Stop",
+        soundOn: "Ton an", soundOff: "Ton aus",
+        ready: "BEREIT", readyInstruction: "Wahle ein Theme und Technik, dann drucke Start",
+        lblTotalCycles: "Gesamtzyklen", lblTotalSessions: "Gesamtsitzungen", lblStreak: "Tage in Folge", lblToday: "Heute", lblWeek: "Diese Woche", lblLast: "Letzte Sitzung",
+        chartTitle: "Letzte 7 Tage",
+        reminderTitle: "⏰ Erinnerung", reminderLabel: "Tagliche Erinnerung um", reminderNote: "Die App zeigt eine Benachrichtigung, wenn sie zur gewahlten Zeit geoffnet ist.",
+        progressTitle: "Dein Fortschritt", progressDesc: "Bleibe konsequent fur maximale Vorteile. Schon 3 Minuten pro Tag helfen bei Stressabbau und besserem Schlaf.",
+        reminderMsg: "⏰ Zeit fur deine Atemubung!",
+        cycleText: (c,total) => `Zyklus: ${c} / ${total}`,
+        streak0: "Beginne heute deine Serie!", streakActive: s => `${s} Tag${s>1?'e':''} in Folge 🔥`, streakPaused: s => `${s} Tag${s>1?'e':''} in Folge (mache heute eine Sitzung!)`,
+        done: "Ubung abgeschlossen. Gut gemacht! 🎉", doneLabel: "FERTIG!",
+        phases: {
+            inhale: "EINATMEN", hold: "HALTEN", exhale: "AUSATMEN", pause: "PAUSE",
+            inhaleInstr: "Atme ruhig durch die Nase ein", holdInstr: "Halte den Atem an", exhaleInstr: "Atme vollstandig durch den Mund aus",
+            inhaleInstrBox: "Einatmen (4 Sek)", holdInstrBox: "Halten (4 Sek)", exhaleInstrBox: "Ausatmen (4 Sek)", pauseInstr: "Pause (4 Sek)",
+            inhaleInstrEqual: "Atme gleichmassig ein", exhaleInstrEqual: "Atme gleichmassig aus",
+            inhaleInstrCoherent: "Langsam einatmen (5 Sek)", exhaleInstrCoherent: "Langsam ausatmen (5 Sek)"
+        },
+        techniques: {
+            '4-7-8': { name: "4-7-8 Schlaf", desc: "Entwickelt von Dr. Andrew Weil. Ein naturliches Beruhigungsmittel fur das Nervensystem. Atme 4 Sekunden durch die Nase ein, halte 7 Sekunden, und atme 8 Sekunden durch den Mund aus. Wiederhole 4 bis 8 Zyklen." },
+            'box': { name: "Box Breathing", desc: "Von Navy SEALs genutzt fur Fokus unter Druck. Ein quadratisches Muster: 4 Sekunden ein, 4 halten, 4 aus, 4 Pause. Hilft bei Stressmanagement und Konzentration." },
+            'equal': { name: "Gleichmassige Atmung", desc: "Sama Vritti im Yoga. Bringt Korper und Geist durch gleiche Ein- und Ausatmung in Balance. Ideal fur Anfanger und tagliche Entspannung." },
+            'coherent': { name: "Koharent 5-5", desc: "Koharente Atmung im 5-5-Rhythmus. Bringt Herzschlag und Atmung in Harmonie fur optimale Entspannung und Herz-Koharenz." }
+        }
+    },
+    es: {
+        appSubtitle: "Respira con calma, relaja el cuerpo",
+        tabBreathe: "Practicar", tabStats: "Estadisticas",
+        btn478: "4-7-8 Sueno", btnBox: "Box Breathing", btnEqual: "Respiracion Igual", btnCoherent: "Coherente 5-5",
+        startBtn: "Iniciar", stopBtn: "Detener",
+        soundOn: "Sonido activado", soundOff: "Sonido desactivado",
+        ready: "LISTO", readyInstruction: "Elige un tema y tecnica, luego presiona Iniciar",
+        lblTotalCycles: "Ciclos totales", lblTotalSessions: "Sesiones totales", lblStreak: "Racha de dias", lblToday: "Hoy", lblWeek: "Esta semana", lblLast: "Ultima sesion",
+        chartTitle: "Ultimos 7 dias",
+        reminderTitle: "⏰ Recordatorio", reminderLabel: "Recordatorio diario a las", reminderNote: "La app muestra una notificacion cuando esta abierta a la hora elegida.",
+        progressTitle: "Tu progreso", progressDesc: "Mantente constante para obtener los maximos beneficios. Incluso 3 minutos por dia ayudan a reducir el estres y mejorar el sueno.",
+        reminderMsg: "⏰ Hora de tu ejercicio de respiracion!",
+        cycleText: (c,total) => `Ciclo: ${c} / ${total}`,
+        streak0: "Comienza tu racha hoy!", streakActive: s => `!${s} dia${s>1?'s':''} seguido${s>1?'s':''} 🔥`, streakPaused: s => `${s} dia${s>1?'s':''} seguido${s>1?'s':''} (!haz una sesion hoy!)`,
+        done: "Ejercicio completado. Bien hecho! 🎉", doneLabel: "LISTO!",
+        phases: {
+            inhale: "INHALAR", hold: "AGUANTAR", exhale: "EXHALAR", pause: "PAUSA",
+            inhaleInstr: "Inhala suavemente por la nariz", holdInstr: "Aguanta la respiracion", exhaleInstr: "Exhala completamente por la boca",
+            inhaleInstrBox: "Inhalar (4 seg)", holdInstrBox: "Aguantar (4 seg)", exhaleInstrBox: "Exhalar (4 seg)", pauseInstr: "Pausa (4 seg)",
+            inhaleInstrEqual: "Inhala uniformemente", exhaleInstrEqual: "Exhala uniformemente",
+            inhaleInstrCoherent: "Inhala lentamente (5 seg)", exhaleInstrCoherent: "Exhala lentamente (5 seg)"
+        },
+        techniques: {
+            '4-7-8': { name: "4-7-8 Sueno", desc: "Desarrollado por el Dr. Andrew Weil. Un tranquilizante natural para el sistema nervioso. Inhala por la nariz durante 4 segundos, aguanta 7, y exhala por la boca durante 8. Repite de 4 a 8 ciclos." },
+            'box': { name: "Box Breathing", desc: "Usado por los Navy SEALs para concentracion bajo presion. Un patron cuadrado: 4 segundos inhalar, 4 aguantar, 4 exhalar, 4 pausa. Ayuda con el manejo del estres y la concentracion." },
+            'equal': { name: "Respiracion Igual", desc: "Sama Vritti en yoga. Equilibra cuerpo y mente mediante inhalacion y exhalacion iguales. Ideal para principiantes y relajacion diaria." },
+            'coherent': { name: "Coherente 5-5", desc: "Respiracion coherente en ritmo 5-5. Pone el ritmo cardiaco y la respiracion en armonia para una relajacion optima y coherencia cardiaca." }
+        }
+    }
+};
+
+let lang = localStorage.getItem(LS.lang) || (navigator.language.startsWith('nl') ? 'nl' : (navigator.language.startsWith('fr') ? 'fr' : (navigator.language.startsWith('de') ? 'de' : (navigator.language.startsWith('es') ? 'es' : 'en'))));
+
+function setLanguage(l) {
+    lang = l; localStorage.setItem(LS.lang, l);
+    const t = i18n[l];
+    document.getElementById('appSubtitle').textContent = t.appSubtitle;
+    document.getElementById('tabBreathe').textContent = t.tabBreathe;
+    document.getElementById('tabStats').textContent = t.tabStats;
+    document.getElementById('btn478').textContent = t.btn478;
+    document.getElementById('btnBox').textContent = t.btnBox;
+    document.getElementById('btnEqual').textContent = t.btnEqual;
+    document.getElementById('btnCoherent').textContent = t.btnCoherent;
+    document.getElementById('startBtn').textContent = t.startBtn;
+    document.getElementById('stopBtn').textContent = t.stopBtn;
+    document.getElementById('lblTotalCycles').textContent = t.lblTotalCycles;
+    document.getElementById('lblTotalSessions').textContent = t.lblTotalSessions;
+    document.getElementById('lblStreak').textContent = t.lblStreak;
+    document.getElementById('lblToday').textContent = t.lblToday;
+    document.getElementById('lblWeek').textContent = t.lblWeek;
+    document.getElementById('lblLast').textContent = t.lblLast;
+    document.getElementById('chartTitle').textContent = t.chartTitle;
+    document.getElementById('reminderTitle').textContent = t.reminderTitle;
+    document.getElementById('reminderLabel').textContent = t.reminderLabel;
+    document.getElementById('reminderNote').textContent = t.reminderNote;
+    document.getElementById('progressTitle').textContent = t.progressTitle;
+    document.getElementById('progressDesc').textContent = t.progressDesc;
+    if(!isRunning) document.getElementById('instruction').textContent = t.readyInstruction;
+    if(!isRunning) document.getElementById('phaseLabel').textContent = t.ready;
+    document.getElementById('soundLabel').textContent = soundEnabled ? t.soundOn : t.soundOff;
+    document.getElementById('reminderMsg').textContent = t.reminderMsg;
+    updateInfo();
+    updateMiniStreak();
+    renderChart();
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === l));
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+});
+
+const themes = {
+    ocean:  { bg:['#0f2027','#203a43','#2c5364'], accent:'#64d8cb', face:'🌊', shadow:'rgba(100,216,203,0.2)', sound:'waves' },
+    sunset: { bg:['#ff512f','#dd2476','#ff9966'], accent:'#ffd700', face:'🌅', shadow:'rgba(255,215,0,0.2)', sound:'warm' },
+    forest: { bg:['#134e5e','#71b280','#a8e6cf'], accent:'#a8e6cf', face:'🌲', shadow:'rgba(168,230,207,0.2)', sound:'forest' },
+    night:  { bg:['#0f0c29','#302b63','#24243e'], accent:'#b19cd9', face:'🌙', shadow:'rgba(177,156,217,0.2)', sound:'night' },
+    candy:  { bg:['#ff9a9e','#fecfef','#ffecd2'], accent:'#ff6b6b', face:'🍬', shadow:'rgba(255,107,107,0.2)', sound:'bells' },
+    lavender:{ bg:['#667eea','#764ba2','#a18cd1'], accent:'#e0c3fc', face:'💜', shadow:'rgba(224,195,252,0.2)', sound:'drone' }
+};
+
+const techniqueDefs = {
+    '4-7-8': { phases:[{name:'Inademen',duration:4,scale:1.8},{name:'Vasthouden',duration:7,scale:1.8},{name:'Uitademen',duration:8,scale:1.0}], cycles:6 },
+    'box':   { phases:[{name:'Inademen',duration:4,scale:1.8},{name:'Vasthouden',duration:4,scale:1.8},{name:'Uitademen',duration:4,scale:1.0},{name:'Pauze',duration:4,scale:1.0}], cycles:8 },
+    'equal': { phases:[{name:'Inademen',duration:4,scale:1.6},{name:'Uitademen',duration:4,scale:1.0}], cycles:10 },
+    'coherent':{ phases:[{name:'Inademen',duration:5,scale:1.7},{name:'Uitademen',duration:5,scale:1.0}], cycles:10 }
+};
+
+let currentTheme='ocean', currentTechnique='4-7-8', isRunning=false, animationId=null;
+let cycleCount=0, currentPhaseIndex=0, phaseStartTime=0, audioCtx=null, ambientNodes=[], soundEnabled=false;
+
+const breathOrb=document.getElementById('breathOrb'), orbFace=document.getElementById('orbFace'), timerProgress=document.getElementById('timerProgress');
+const phaseLabel=document.getElementById('phaseLabel'), timerDisplay=document.getElementById('timer'), instruction=document.getElementById('instruction');
+const startBtn=document.getElementById('startBtn'), stopBtn=document.getElementById('stopBtn'), cycleCounter=document.getElementById('cycleCounter');
+const infoPanel=document.getElementById('infoPanel'), soundToggle=document.getElementById('soundToggle'), miniStreak=document.getElementById('miniStreak');
+const streakText=document.getElementById('streakText'), reminderMsg=document.getElementById('reminderMsg');
+
+/* ===== Stats ===== */
+function getTodayStr(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'); }
+function loadStats(){ try{ return JSON.parse(localStorage.getItem(LS.stats)) || {sessions:0,totalCycles:0,daily:{}}; } catch(e){ return {sessions:0,totalCycles:0,daily:{}}; } }
+function saveStats(s){ localStorage.setItem(LS.stats, JSON.stringify(s)); }
+function recordSession(cycles){ const s=loadStats(); s.sessions++; s.totalCycles+=cycles; const today=getTodayStr(); s.daily[today]=(s.daily[today]||0)+cycles; saveStats(s); updateStatsUI(); updateMiniStreak(); }
+function getStreak(){ const s=loadStats(); const days=Object.keys(s.daily).sort(); if(!days.length) return 0; let streak=0; const today=getTodayStr(); const hasToday=!!s.daily[today]; let checkDate=new Date(); if(!hasToday) checkDate.setDate(checkDate.getDate()-1); while(true){ const ds=checkDate.getFullYear()+'-'+(checkDate.getMonth()+1).toString().padStart(2,'0')+'-'+checkDate.getDate().toString().padStart(2,'0'); if(s.daily[ds]){ streak++; checkDate.setDate(checkDate.getDate()-1); } else break; } return streak; }
+function getWeekData(){ const s=loadStats(); const out=[]; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const ds=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'); const dayName=['Zo','Ma','Di','Wo','Do','Vr','Za'][d.getDay()]; out.push({label:dayName, value:(s.daily[ds]||0), date:ds}); } return out; }
+function getWeekTotal(){ return getWeekData().reduce((a,b)=>a+b.value,0); }
+function getLastSessionStr(){ const s=loadStats(); const days=Object.keys(s.daily).sort(); if(!days.length) return '-'; const last=days[days.length-1]; const parts=last.split('-'); return parts[2]+'/'+(parts[1])+'/'+parts[0]; }
+function updateMiniStreak(){ const st=getStreak(); const t=i18n[lang]; const today=getTodayStr(); const s=loadStats(); const hasToday=!!s.daily[today]; if(st===0) streakText.textContent=t.streak0; else if(hasToday) streakText.textContent=t.streakActive(st); else streakText.textContent=t.streakPaused(st); }
+function updateStatsUI(){ const s=loadStats(); document.getElementById('statTotalCycles').textContent=s.totalCycles; document.getElementById('statTotalSessions').textContent=s.sessions; document.getElementById('statStreak').textContent=getStreak(); document.getElementById('statToday').textContent=(s.daily[getTodayStr()]||0); document.getElementById('statWeek').textContent=getWeekTotal(); document.getElementById('statLast').textContent=getLastSessionStr(); renderChart(); }
+function renderChart(){ const container=document.getElementById('chartBars'); const data=getWeekData(); const max=Math.max(...data.map(d=>d.value), 1); container.innerHTML=''; data.forEach(d=>{ const h=Math.max((d.value/max)*120, 4); container.innerHTML+=`<div class="bar-wrap"><div class="bar-val">${d.value}</div><div class="bar" style="height:${h}px"></div><div class="bar-label">${d.label}</div></div>`; }); }
+
+/* ===== Reminder ===== */
+let reminderCheckInterval=null;
+function loadReminder(){ try{ return JSON.parse(localStorage.getItem(LS.reminder)) || {enabled:false, time:'20:00'}; } catch(e){ return {enabled:false, time:'20:00'}; } }
+function saveReminder(r){ localStorage.setItem(LS.reminder, JSON.stringify(r)); }
+function checkReminder(){ const r=loadReminder(); if(!r.enabled) return; const now=new Date(); const hm=(now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')); if(hm===r.time && now.getSeconds()<10){ const t=i18n[lang]; reminderMsg.textContent=t.reminderMsg; reminderMsg.classList.add('show'); setTimeout(()=>reminderMsg.classList.remove('show'), 60000); } }
+function initReminderUI(){ const r=loadReminder(); document.getElementById('reminderTime').value=r.time; const toggle=document.getElementById('reminderToggle'); if(r.enabled) toggle.classList.add('on'); toggle.addEventListener('click',()=>{ const on=toggle.classList.toggle('on'); saveReminder({enabled:on, time:document.getElementById('reminderTime').value}); }); document.getElementById('reminderTime').addEventListener('change',(e)=>{ saveReminder({enabled:toggle.classList.contains('on'), time:e.target.value}); }); if(reminderCheckInterval) clearInterval(reminderCheckInterval); reminderCheckInterval=setInterval(checkReminder, 30000); }
+
+/* ===== Audio ===== */
+function createAudioContext(){ if(!audioCtx){ audioCtx=new(window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }
+function makePinkNoise(){ const bufferSize=4096; let b0,b1,b2,b3,b4,b5,b6; b0=b1=b2=b3=b4=b5=b6=0.0; const node=audioCtx.createScriptProcessor(bufferSize,1,1); node.onaudioprocess=function(e){ const output=e.outputBuffer.getChannelData(0); for(let i=0;i<bufferSize;i++){ const white=Math.random()*2-1; b0=0.99886*b0+white*0.0555179; b1=0.99332*b1+white*0.0750759; b2=0.96900*b2+white*0.1538520; b3=0.86650*b3+white*0.3104856; b4=0.55000*b4+white*0.5329522; b5=-0.7616*b5-white*0.0168980; output[i]=b0+b1+b2+b3+b4+b5+b6+white*0.5362; output[i]*=0.11; b6=white*0.115926; } }; return node; }
+function makeBrownNoise(){ const bufferSize=4096; let lastOut=0; const node=audioCtx.createScriptProcessor(bufferSize,1,1); node.onaudioprocess=function(e){ const output=e.outputBuffer.getChannelData(0); for(let i=0;i<bufferSize;i++){ const white=Math.random()*2-1; output[i]=(lastOut+(0.02*white))/1.02; lastOut=output[i]; output[i]*=3.5; } }; return node; }
+function playBell(freq,time,duration,vol=0.03){ const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.type='sine'; osc.frequency.value=freq; gain.gain.setValueAtTime(0,time); gain.gain.linearRampToValueAtTime(vol,time+0.01); gain.gain.exponentialRampToValueAtTime(0.001,time+duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(time); osc.stop(time+duration); }
+function startAmbient(){ stopAmbient(); if(!soundEnabled||!audioCtx) return; const t=themes[currentTheme]; const now=audioCtx.currentTime; if(t.sound==='waves'){ const noise=makePinkNoise(); const filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=400; const gain=audioCtx.createGain(); gain.gain.value=0.04; const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.2; const lfoGain=audioCtx.createGain(); lfoGain.gain.value=800; lfo.connect(lfoGain); lfoGain.connect(filter.frequency); lfo.start(); noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); ambientNodes.push(noise,filter,gain,lfo,lfoGain); } else if(t.sound==='warm'){ const noise=makePinkNoise(); const filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=300; filter.Q.value=0.5; const gain=audioCtx.createGain(); gain.gain.value=0.03; noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); ambientNodes.push(noise,filter,gain); } else if(t.sound==='forest'){ const brown=makeBrownNoise(); const filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=200; filter.Q.value=0.6; const gain=audioCtx.createGain(); gain.gain.value=0.03; brown.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); ambientNodes.push(brown,filter,gain); (function chirp(){ if(!soundEnabled) return; const cTime=audioCtx.currentTime; const f1=2000+Math.random()*1500; playBell(f1,cTime,0.15,0.02); playBell(f1+300,cTime+0.1,0.12,0.015); if(Math.random()>0.5) playBell(f1+600,cTime+0.2,0.1,0.01); setTimeout(chirp,4000+Math.random()*6000); })(); } else if(t.sound==='night'){ const noise=makePinkNoise(); const gain=audioCtx.createGain(); gain.gain.value=0.015; noise.connect(gain); gain.connect(audioCtx.destination); ambientNodes.push(noise,gain); const drone=audioCtx.createOscillator(); drone.type='sine'; drone.frequency.value=110; const dGain=audioCtx.createGain(); dGain.gain.value=0.02; drone.connect(dGain); dGain.connect(audioCtx.destination); drone.start(); ambientNodes.push(drone,dGain); } else if(t.sound==='bells'){ (function candyBell(){ if(!soundEnabled) return; const cTime=audioCtx.currentTime; const notes=[523,659,784,880,1047]; const note=notes[Math.floor(Math.random()*notes.length)]; playBell(note,cTime,1.5,0.02); if(Math.random()>0.6) playBell(notes[Math.floor(Math.random()*notes.length)],cTime+0.5,1.2,0.015); setTimeout(candyBell,3000+Math.random()*5000); })(); } else if(t.sound==='drone'){ const d1=audioCtx.createOscillator(); d1.type='sine'; d1.frequency.value=136.1; const g1=audioCtx.createGain(); g1.gain.value=0.02; d1.connect(g1); g1.connect(audioCtx.destination); d1.start(); const d2=audioCtx.createOscillator(); d2.type='sine'; d2.frequency.value=172.06; const g2=audioCtx.createGain(); g2.gain.value=0.015; d2.connect(g2); g2.connect(audioCtx.destination); d2.start(); ambientNodes.push(d1,g1,d2,g2); } }
+function stopAmbient(){ ambientNodes.forEach(n=>{ try{ if(n.stop)n.stop(); if(n.disconnect)n.disconnect(); }catch(e){} }); ambientNodes=[]; }
+function toggleSound(){ soundEnabled=!soundEnabled; const t=i18n[lang]; if(soundEnabled){ soundToggle.classList.add('active'); soundToggle.querySelector('.icon').textContent='🔊'; soundToggle.querySelector('.label').textContent=t.soundOn; createAudioContext(); startAmbient(); } else { soundToggle.classList.remove('active'); soundToggle.querySelector('.icon').textContent='🔇'; soundToggle.querySelector('.label').textContent=t.soundOff; stopAmbient(); } }
+soundToggle.addEventListener('click',toggleSound);
+
+/* ===== Background ===== */
+function createBackgroundElements(){ const container=document.getElementById('stars'); container.innerHTML=''; for(let i=0;i<30;i++){ const el=document.createElement('div'); el.className=Math.random()>0.5?'star':'particle'; el.style.left=Math.random()*100+'%'; el.style.top=Math.random()*100+'%'; const size=Math.random()*4+2; el.style.width=size+'px'; el.style.height=size+'px'; el.style.animationDelay=Math.random()*5+'s'; el.style.animationDuration=(Math.random()*5+5)+'s'; container.appendChild(el); } }
+createBackgroundElements();
+function applyTheme(themeName){ currentTheme=themeName; const t=themes[themeName]; const root=document.documentElement; root.style.setProperty('--bg-1',t.bg[0]); root.style.setProperty('--bg-2',t.bg[1]); root.style.setProperty('--bg-3',t.bg[2]); root.style.setProperty('--accent',t.accent); root.style.setProperty('--shadow',t.shadow); orbFace.textContent=t.face; createBackgroundElements(); if(soundEnabled) startAmbient(); }
+document.querySelectorAll('.theme-dot').forEach(dot=>{ dot.addEventListener('click',()=>{ document.querySelectorAll('.theme-dot').forEach(d=>d.classList.remove('active')); dot.classList.add('active'); applyTheme(dot.dataset.theme); }); });
+
+/* ===== Navigation ===== */
+document.querySelectorAll('.nav-tab').forEach(tab=>{ tab.addEventListener('click',()=>{ document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); tab.classList.add('active'); document.getElementById('view-'+tab.dataset.view).classList.add('active'); if(tab.dataset.view==='stats') updateStatsUI(); }); });
+
+/* ===== Breathing Logic ===== */
+function getPhaseLabel(name){ const p=i18n[lang].phases; if(name==='Inademen') return p.inhale; if(name==='Vasthouden') return p.hold; if(name==='Uitademen') return p.exhale; if(name==='Pauze') return p.pause; return name; }
+function getPhaseInstruction(name, tech){ const p=i18n[lang].phases; if(name==='Inademen'){ if(tech==='box') return p.inhaleInstrBox; if(tech==='equal') return p.inhaleInstrEqual; if(tech==='coherent') return p.inhaleInstrCoherent; return p.inhaleInstr; } if(name==='Vasthouden'){ if(tech==='box') return p.holdInstrBox; return p.holdInstr; } if(name==='Uitademen'){ if(tech==='box') return p.exhaleInstrBox; if(tech==='equal') return p.exhaleInstrEqual; if(tech==='coherent') return p.exhaleInstrCoherent; return p.exhaleInstr; } if(name==='Pauze') return p.pauseInstr; return name; }
+function playPhaseTone(freq,dur){ if(!audioCtx) return; const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.type='sine'; osc.frequency.setValueAtTime(freq,audioCtx.currentTime); gain.gain.setValueAtTime(0.04,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+dur); }
+function updateInfo(){ const t=i18n[lang].techniques[currentTechnique]; document.getElementById('infoTitle').textContent = t.name; document.getElementById('infoDesc').textContent = t.desc; }
+document.querySelectorAll('.technique-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ if(isRunning) stop(); document.querySelectorAll('.technique-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTechnique=btn.dataset.technique; updateInfo(); resetDisplay(); }); });
+function resetDisplay(){ breathOrb.style.transform='scale(1)'; breathOrb.classList.remove('orb-breathing'); timerProgress.style.transform='rotate(0deg)'; const t=i18n[lang]; phaseLabel.textContent=t.ready; timerDisplay.textContent='0'; instruction.textContent=t.readyInstruction; const tech=techniqueDefs[currentTechnique]; cycleCounter.textContent=t.cycleText(0, tech.cycles); cycleCount=0; }
+function start(){ if(isRunning) return; isRunning=true; startBtn.style.display='none'; stopBtn.style.display='inline-block'; cycleCount=0; currentPhaseIndex=0; phaseStartTime=performance.now(); breathOrb.classList.add('orb-breathing'); const tech=techniqueDefs[currentTechnique]; instruction.textContent=getPhaseInstruction(tech.phases[0].name, currentTechnique); phaseLabel.textContent=getPhaseLabel(tech.phases[0].name); createAudioContext(); if(soundEnabled) startAmbient(); playPhaseTone(440,0.3); requestAnimationFrame(animate); }
+function stop(){ isRunning=false; startBtn.style.display='inline-block'; stopBtn.style.display='none'; if(animationId) cancelAnimationFrame(animationId); resetDisplay(); stopAmbient(); if(soundEnabled) startAmbient(); }
+function animate(now){ if(!isRunning) return; const tech=techniqueDefs[currentTechnique]; const phases=tech.phases; const phase=phases[currentPhaseIndex]; const elapsed=(now-phaseStartTime)/1000; const remaining=Math.max(0,Math.ceil(phase.duration-elapsed)); timerDisplay.textContent=remaining; const progress=Math.min(elapsed/phase.duration,1); if(phase.name==='Inademen'){ const scale=1+(phase.scale-1)*progress; breathOrb.style.transform=`scale(${scale})`; } else if(phase.name==='Uitademen'||phase.name==='Pauze'){ const inPhase=phases.find(p=>p.name==='Inademen'); const startScale=inPhase?inPhase.scale:1.6; const scale=1+(startScale-1)*(1-progress); breathOrb.style.transform=`scale(${scale})`; } timerProgress.style.transform=`rotate(${progress*360}deg)`; phaseLabel.textContent=getPhaseLabel(phase.name); instruction.textContent=getPhaseInstruction(phase.name, currentTechnique); const t=i18n[lang]; cycleCounter.textContent=t.cycleText(cycleCount+1, tech.cycles); if(elapsed>=phase.duration){ currentPhaseIndex++; if(currentPhaseIndex>=phases.length){ currentPhaseIndex=0; cycleCount++; playPhaseTone(523,0.25); if(cycleCount>=tech.cycles){ recordSession(cycleCount); stop(); phaseLabel.textContent=t.doneLabel; instruction.textContent=t.done; orbFace.textContent='✨'; playPhaseTone(659,0.4); setTimeout(()=>{orbFace.textContent=themes[currentTheme].face;},2000); return; } } else { playPhaseTone(440,0.12); } phaseStartTime=now; } animationId=requestAnimationFrame(animate); }
+startBtn.addEventListener('click',start); stopBtn.addEventListener('click',stop);
+
+/* ===== Init ===== */
+setLanguage(lang);
+applyTheme(currentTheme);
+updateStatsUI(); updateMiniStreak(); initReminderUI();
+})();
+
+/* Service Worker Registration */
+if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{
+        navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered'));
+    });
+}
+</script>
+</body>
+</html>

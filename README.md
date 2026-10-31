@@ -64,8 +64,29 @@ Alle paden zijn relatief, dus de app werkt ook in zo'n submap.
 De app verstuurt niets. Statistieken en instellingen worden alleen in de
 `localStorage` van je eigen browser bewaard.
 
+## Bronnen
+
+De beschrijvingen in de app zijn gebaseerd op:
+
+- **4-7-8**: de instructies van Dr. Andrew Weil
+  ([video en uitleg](https://www.drweil.com/videos-features/videos/breathing-exercises-4-7-8-breath/),
+  [drie ademhalingsoefeningen](https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/three-breathing-exercises-and-techniques/)).
+  Weil raadt aan de eerste maand niet meer dan 4 cycli na elkaar te doen; de app doet er daarom 4.
+- **Box breathing**: gepopulariseerd door oud-Navy SEAL Mark Divine
+  ([Time](https://time.com/4316151/breathing-technique-navy-seal-calm-focused/)).
+- **Gelijke adem**: *sama vritti* pranayama uit de yoga
+  ([Ekhart Yoga](https://www.ekhartyoga.com/articles/practice/how-to-practice-samavritti-breath)).
+- **Coherent 5-5**: 6 ademhalingen per minuut, het ritme van de cohérence cardiaque
+  ([Université Laval](https://www.ulaval.ca/mon-equilibre-ul/mes-habitudes-de-vie/coherence-cardiaque)).
+- **Effect van dagelijks oefenen**: Balban e.a., *Cell Reports Medicine*, 2023
+  ([PMC9873947](https://pmc.ncbi.nlm.nih.gov/articles/PMC9873947/)), en de meta-analyse
+  van Fincham e.a., *Scientific Reports*, 2023
+  ([PMC9828383](https://pmc.ncbi.nlm.nih.gov/articles/PMC9828383/)).
+  Het onderzoek naar ademhalingsoefeningen is nog beperkt; de effecten zijn klein tot matig.
+
 ## Disclaimer
 
 Deze app is bedoeld voor ontspanning en vervangt geen medisch advies. Voel je je
 duizelig of ongemakkelijk tijdens een oefening, stop dan en adem in je eigen
-tempo verder.
+tempo verder. Heb je een hart- of longaandoening of ben je zwanger, overleg dan
+eerst met je arts voordat je oefeningen doet waarbij je de adem vasthoudt.

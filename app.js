@@ -41,7 +41,7 @@ const THEMES = {
 
 // scale = grootte van de cirkel aan het einde van de fase.
 const TECHNIQUES = {
-    '4-7-8':  { cycles: 6,  phases: [
+    '4-7-8':  { cycles: 4,  phases: [   // Weil: max. 4 cycli na elkaar in de eerste maand
         { type: 'inhale', duration: 4, scale: 1.8 },
         { type: 'hold',   duration: 7, scale: 1.8 },
         { type: 'exhale', duration: 8, scale: 1 } ] },

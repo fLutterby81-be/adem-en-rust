@@ -1,19 +1,20 @@
 # Adem & Rust
 
-Een eenvoudige web-app (PWA) met begeleide ademhalingsoefeningen voor rust,
-focus en betere slaap. Werkt in de browser, kan op je telefoon worden
-geïnstalleerd en werkt daarna ook offline.
+Een eenvoudige web-app (PWA) met begeleide ademhalingsoefeningen. Ze werkt in de
+browser, kan op je telefoon worden geïnstalleerd en werkt daarna ook offline.
 
-## Functies
+## Wat de app doet
 
-- **Vier technieken**: 4-7-8 (slaap), box breathing, gelijke adem en coherente ademhaling 5-5
-- **Geanimeerde ademcirkel** met aftelling en voortgangsring per fase
-- **Zes thema's**, elk met een eigen achtergrondgeluid (golven, bos, nacht …), volledig in de browser opgewekt
-- **Vijf talen**: Nederlands, Engels, Frans, Duits en Spaans (automatisch gekozen op basis van je toestel)
-- **Statistieken**: totaal aantal cycli en sessies, dagen op rij, grafiek van de afgelopen 7 dagen
-- **Dagelijkse herinnering** terwijl de app openstaat (met systeemmelding als je dat toestaat)
+- **Vier technieken**: 4-7-8, box breathing, gelijke adem en coherente ademhaling 5-5
+  - bij 4-7-8 kies je zelf hoe lang één tel duurt (0,5 tot 1,5 seconde); de verhouding 4:7:8 blijft gelijk
+  - een sessie coherente ademhaling duurt 5 minuten (methode 3-6-5)
+- **Ademcirkel** die groter en kleiner wordt, met aftelling en voortgangsring per fase
+- **Zes kleurthema's**, elk met een eigen achtergrondgeluid dat in de browser wordt opgewekt
+- **Vijf talen**: Nederlands, Engels, Frans, Duits en Spaans
+- **Statistieken**: cycli, sessies, dagen op rij en een grafiek van de afgelopen 7 dagen
+- **Dagelijkse herinnering** zolang de app openstaat
+- **Over-pagina** met uitleg, privacy-informatie en bronnen
 - Het scherm blijft aan tijdens een oefening (op toestellen die dat ondersteunen)
-- Thema, taal en techniek worden onthouden; alle gegevens blijven lokaal op je toestel
 
 ## Bestanden
 
@@ -22,7 +23,7 @@ geïnstalleerd en werkt daarna ook offline.
 | `index.html` | De pagina-opbouw |
 | `style.css` | Opmaak en lay-out |
 | `i18n.js` | Alle teksten in de vijf talen |
-| `app.js` | De logica: ademsessie, geluid, statistieken, herinnering, thema's |
+| `app.js` | De logica: ademsessie, tempo, geluid, statistieken, herinnering, thema's |
 | `sw.js` | Service worker voor offline gebruik |
 | `manifest.json` | Gegevens om de app te installeren (naam, iconen, kleuren) |
 | `icons/` | App-iconen (`icon.svg` is de bron; de PNG's zijn ervan afgeleid) |
@@ -50,9 +51,11 @@ Alle paden zijn relatief, dus de app werkt ook in zo'n submap.
 ## Aanpassen
 
 - **Teksten of vertalingen**: pas `i18n.js` aan. Elke taal moet dezelfde sleutels hebben.
+  Houd de toon rustig en feitelijk, zonder grote beloftes.
 - **Een techniek wijzigen of toevoegen**: pas `TECHNIQUES` bovenaan `app.js` aan
-  (fasen, duur in seconden, aantal cycli), voeg teksten toe onder `techniques` in
-  `i18n.js` en een knop in `index.html`.
+  (fasen, aantal tellen, aantal cycli), voeg teksten toe onder `techniques` in
+  `i18n.js` en een knop in `index.html`. Met `tempo: true` krijgt een techniek de
+  tempokeuze; de keuzes staan in `TEMPO_OPTIONS`.
 - **Kleuren van een thema**: pas `THEMES` bovenaan `app.js` aan. Let op voldoende
   contrast tussen tekst en achtergrond.
 - **Updates**: de service worker haalt altijd eerst de nieuwste versie van het
@@ -61,8 +64,9 @@ Alle paden zijn relatief, dus de app werkt ook in zo'n submap.
 
 ## Privacy
 
-De app verstuurt niets. Statistieken en instellingen worden alleen in de
-`localStorage` van je eigen browser bewaard.
+De app verstuurt geen gegevens en gebruikt geen cookies, accounts of tracking.
+Statistieken en instellingen worden alleen in de `localStorage` van je eigen
+browser bewaard.
 
 ## Bronnen
 
@@ -72,15 +76,17 @@ De beschrijvingen in de app zijn gebaseerd op:
   ([video en uitleg](https://www.drweil.com/videos-features/videos/breathing-exercises-4-7-8-breath/),
   [drie ademhalingsoefeningen](https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/three-breathing-exercises-and-techniques/)).
   Weil raadt aan de eerste maand niet meer dan 4 cycli na elkaar te doen; de app doet er daarom 4.
-- **Box breathing**: gepopulariseerd door oud-Navy SEAL Mark Divine
+  Volgens hem telt de verhouding 4:7:8, niet het aantal seconden: sneller als vasthouden
+  moeilijk is, trager met oefening. Daarom de tempokeuze.
+- **Box breathing**: bekend geworden via oud-Navy SEAL Mark Divine
   ([Time](https://time.com/4316151/breathing-technique-navy-seal-calm-focused/)).
 - **Gelijke adem**: *sama vritti* pranayama uit de yoga
   ([Ekhart Yoga](https://www.ekhartyoga.com/articles/practice/how-to-practice-samavritti-breath)).
-- **Coherent 5-5**: 6 ademhalingen per minuut, het ritme van de cohérence cardiaque
+- **Coherent 5-5**: 6 ademhalingen per minuut, 5 minuten lang, zoals in de methode 3-6-5
   ([Université Laval](https://www.ulaval.ca/mon-equilibre-ul/mes-habitudes-de-vie/coherence-cardiaque)).
-- **Effect van dagelijks oefenen**: Balban e.a., *Cell Reports Medicine*, 2023
+- **Effect van dagelijks oefenen**: Balban et al., *Cell Reports Medicine*, 2023
   ([PMC9873947](https://pmc.ncbi.nlm.nih.gov/articles/PMC9873947/)), en de meta-analyse
-  van Fincham e.a., *Scientific Reports*, 2023
+  van Fincham et al., *Scientific Reports*, 2023
   ([PMC9828383](https://pmc.ncbi.nlm.nih.gov/articles/PMC9828383/)).
   Het onderzoek naar ademhalingsoefeningen is nog beperkt; de effecten zijn klein tot matig.
 

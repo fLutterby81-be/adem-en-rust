@@ -22,7 +22,8 @@ const STORAGE = {
     reminder: 'ar_reminder_v3',
     lang: 'ar_lang_v3',
     theme: 'ar_theme_v3',
-    technique: 'ar_technique_v3'
+    technique: 'ar_technique_v3',
+    tempo: 'ar_tempo_v3'
 };
 
 // fg = tekstkleur (RGB-drietal), surface = paneelachtergrond. Kleuren zijn gekozen op voldoende contrast.
@@ -39,9 +40,11 @@ const THEMES = {
                 surface: 'rgb(0 0 0 / 0.2)', btnText: '#5a3a85' }
 };
 
+// duration = aantal tellen; één tel duurt 1 seconde, behalve bij een techniek met
+// tempo: true, waar je de duur van een tel zelf kiest (zie TEMPO_OPTIONS).
 // scale = grootte van de cirkel aan het einde van de fase.
 const TECHNIQUES = {
-    '4-7-8':  { cycles: 4,  phases: [   // Weil: max. 4 cycli na elkaar in de eerste maand
+    '4-7-8':  { cycles: 4, tempo: true, phases: [   // Weil: max. 4 cycli na elkaar in de eerste maand
         { type: 'inhale', duration: 4, scale: 1.8 },
         { type: 'hold',   duration: 7, scale: 1.8 },
         { type: 'exhale', duration: 8, scale: 1 } ] },
@@ -53,10 +56,15 @@ const TECHNIQUES = {
     equal:    { cycles: 10, phases: [
         { type: 'inhale', duration: 4, scale: 1.6 },
         { type: 'exhale', duration: 4, scale: 1 } ] },
-    coherent: { cycles: 10, phases: [
+    coherent: { cycles: 30, phases: [   // 30 × 10 s = 5 minuten (methode 3-6-5)
         { type: 'inhale', duration: 5, scale: 1.7 },
         { type: 'exhale', duration: 5, scale: 1 } ] }
 };
+
+// Keuzes voor de duur van één tel (in seconden). Weil: de verhouding 4:7:8 telt,
+// niet het aantal seconden; sneller als vasthouden moeilijk is, trager met oefening.
+const TEMPO_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5];
+const DEFAULT_TEMPO = 1;
 
 const DEFAULT_REMINDER = { enabled: false, time: '20:00', lastShown: null };
 const REMINDER_WINDOW_MS = 60 * 60 * 1000; // een gemiste herinnering wordt tot een uur later nog getoond
@@ -338,7 +346,12 @@ let currentTechnique = '4-7-8';
 let displayState = 'idle';     // 'idle' | 'running' | 'done'
 let doneTimer = null;
 
-const session = { running: false, start: 0, step: -1, second: -1, cycle: 0, phaseIndex: 0, frame: 0 };
+const session = { running: false, start: 0, unit: 1, step: -1, second: -1, cycle: 0, phaseIndex: 0, frame: 0 };
+
+let tempo = (() => {
+    const saved = Number(readText(STORAGE.tempo));
+    return TEMPO_OPTIONS.includes(saved) ? saved : DEFAULT_TEMPO;
+})();
 
 const orb = $('orb');
 const orbFace = $('orbFace');
@@ -355,9 +368,39 @@ function technique() {
     return TECHNIQUES[currentTechnique];
 }
 
+/** Duur van één tel in seconden voor de gekozen techniek. */
+function secondsPerCount() {
+    return technique().tempo ? tempo : 1;
+}
+
 function renderInfo() {
     $('infoTitle').textContent = t(`techniques.${currentTechnique}.name`);
     $('infoDesc').textContent = t(`techniques.${currentTechnique}.desc`);
+}
+
+/** Tempokeuze: alleen zichtbaar bij een techniek met tempo, niet te wijzigen tijdens een sessie. */
+function renderTempo() {
+    const tech = technique();
+    $('tempoControl').hidden = !tech.tempo;
+    if (!tech.tempo) return;
+    const format = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
+    document.querySelectorAll('.tempo-btn').forEach(btn => {
+        const value = Number(btn.dataset.tempo);
+        btn.textContent = `${format.format(value)} s`;
+        btn.setAttribute('aria-label', t('tempoAria')(format.format(value)));
+        btn.setAttribute('aria-pressed', String(value === tempo));
+        btn.disabled = session.running;
+    });
+    const counts = tech.phases.reduce((sum, p) => sum + p.duration, 0);
+    const cycleSeconds = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(counts * tempo);
+    $('tempoHint').textContent = t('tempoHint')(cycleSeconds);
+}
+
+function setTempo(value) {
+    if (session.running || !TEMPO_OPTIONS.includes(value)) return;
+    tempo = value;
+    writeText(STORAGE.tempo, String(value));
+    renderTempo();
 }
 
 /** Instructie, fasenaam en cyclusteller, afhankelijk van de toestand. */
@@ -393,11 +436,15 @@ function startSession() {
     clearTimeout(doneTimer);
     orbFace.textContent = THEMES[currentTheme].face;
 
-    Object.assign(session, { running: true, start: performance.now(), step: -1, second: -1, cycle: 0, phaseIndex: 0 });
+    Object.assign(session, {
+        running: true, start: performance.now(), unit: secondsPerCount(),
+        step: -1, second: -1, cycle: 0, phaseIndex: 0
+    });
     displayState = 'running';
     $('startBtn').hidden = true;
     $('stopBtn').hidden = false;
     stage.classList.add('running');
+    renderTempo();
 
     if (soundEnabled) sound.context();
     cue(440, 0.3);
@@ -412,6 +459,7 @@ function endSession() {
     wakeLock.release();
     $('startBtn').hidden = false;
     $('stopBtn').hidden = true;
+    renderTempo();
     return session.cycle;
 }
 
@@ -442,13 +490,14 @@ function finishSession() {
  * Eén animatieframe. De positie in de oefening wordt telkens berekend uit de
  * verstreken tijd sinds de start, zodat de timing klopt, ook als de browser
  * frames overslaat of de app even op de achtergrond stond.
+ * Alles hieronder is uitgedrukt in tellen; de timer toont de resterende tellen.
  */
 function tick(now) {
     if (!session.running) return;
     const tech = technique();
     const phases = tech.phases;
     const cycleLength = phases.reduce((sum, p) => sum + p.duration, 0);
-    const elapsed = Math.max(0, (now - session.start) / 1000);
+    const elapsed = Math.max(0, (now - session.start) / 1000) / session.unit;
     const cycle = Math.floor(elapsed / cycleLength);
 
     if (cycle >= tech.cycles) {
@@ -499,6 +548,7 @@ function selectTechnique(name) {
         btn.setAttribute('aria-pressed', String(btn.dataset.technique === name));
     });
     renderInfo();
+    renderTempo();
     resetDisplay();
 }
 
@@ -672,6 +722,7 @@ function setLanguage(code) {
 
     renderSoundToggle();
     renderInfo();
+    renderTempo();
     renderStatusText();
     renderStats();
 }
@@ -750,6 +801,9 @@ function bindEvents() {
         btn.addEventListener('click', () => selectTechnique(btn.dataset.technique));
     });
     $('soundToggle').addEventListener('click', () => setSound(!soundEnabled));
+    document.querySelectorAll('.tempo-btn').forEach(btn => {
+        btn.addEventListener('click', () => setTempo(Number(btn.dataset.tempo)));
+    });
     $('startBtn').addEventListener('click', startSession);
     $('stopBtn').addEventListener('click', stopSession);
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Adem &amp; Rust</title>
-<meta name="description" content="Ademhalingsoefeningen voor rust en betere slaap: 4-7-8, box breathing, gelijke adem en coherente ademhaling.">
+<meta name="description" content="Eenvoudige ademhalingsoefeningen: 4-7-8, box breathing, gelijke adem en coherente ademhaling.">
 <meta name="theme-color" content="#0f2027">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,21 +43,34 @@
 <nav class="nav-tabs" role="tablist">
     <button type="button" class="nav-tab" role="tab" id="tab-breathe" data-view="breathe" aria-controls="view-breathe" aria-selected="true" data-i18n="tabBreathe">Oefenen</button>
     <button type="button" class="nav-tab" role="tab" id="tab-stats" data-view="stats" aria-controls="view-stats" aria-selected="false" tabindex="-1" data-i18n="tabStats">Statistieken</button>
+    <button type="button" class="nav-tab" role="tab" id="tab-about" data-view="about" aria-controls="view-about" aria-selected="false" tabindex="-1" data-i18n="tabAbout">Over</button>
 </nav>
 
 <div class="banner" id="reminderBanner" role="status" hidden>
-    <span id="reminderBannerText" data-i18n="reminderMsg">⏰ Tijd voor je ademhalingsoefening!</span>
+    <span id="reminderBannerText" data-i18n="reminderMsg">⏰ Tijd voor je ademhalingsoefening</span>
     <button type="button" class="banner-close" id="reminderBannerClose" data-i18n-aria="close" aria-label="Sluiten">×</button>
 </div>
 
 <main class="view" id="view-breathe" role="tabpanel" aria-labelledby="tab-breathe">
-    <p class="mini-streak"><span aria-hidden="true">🔥</span> <span id="streakText"></span></p>
+    <p class="mini-streak" id="streakText"></p>
 
     <div class="technique-selector" role="group" data-i18n-aria="techniqueGroup" aria-label="Ademtechniek">
         <button type="button" class="technique-btn" data-technique="4-7-8" data-i18n="techniques.4-7-8.name">4-7-8 Slaap</button>
         <button type="button" class="technique-btn" data-technique="box" data-i18n="techniques.box.name">Box Breathing</button>
         <button type="button" class="technique-btn" data-technique="equal" data-i18n="techniques.equal.name">Gelijke Adem</button>
         <button type="button" class="technique-btn" data-technique="coherent" data-i18n="techniques.coherent.name">Coherent 5-5</button>
+    </div>
+
+    <div class="tempo" id="tempoControl" hidden>
+        <p class="tempo-label" id="tempoLabel" data-i18n="tempoLabel">Duur van één tel</p>
+        <div class="tempo-options" role="group" aria-labelledby="tempoLabel">
+            <button type="button" class="tempo-btn" data-tempo="0.5">0,5 s</button>
+            <button type="button" class="tempo-btn" data-tempo="0.75">0,75 s</button>
+            <button type="button" class="tempo-btn" data-tempo="1">1 s</button>
+            <button type="button" class="tempo-btn" data-tempo="1.25">1,25 s</button>
+            <button type="button" class="tempo-btn" data-tempo="1.5">1,5 s</button>
+        </div>
+        <p class="tempo-hint" id="tempoHint"></p>
     </div>
 
     <div class="stage" aria-hidden="true">
@@ -114,7 +127,41 @@
 
     <section class="panel">
         <h2 class="panel-title" data-i18n="progressTitle">Jouw voortgang</h2>
-        <p data-i18n="progressDesc">Blijf consistent om de meeste voordelen te ervaren. Zelfs 3 minuten per dag helpt al bij stressvermindering en betere slaap.</p>
+        <p data-i18n="progressDesc"></p>
+    </section>
+</main>
+
+<main class="view" id="view-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+    <section class="panel">
+        <h2 class="panel-title" data-i18n="about.title">Over Adem &amp; Rust</h2>
+        <p data-i18n="about.intro"></p>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title" data-i18n="about.expectTitle"></h2>
+        <p data-i18n="about.expect"></p>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title" data-i18n="about.privacyTitle"></h2>
+        <p data-i18n="about.privacy"></p>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title" data-i18n="about.installTitle"></h2>
+        <p data-i18n="about.install"></p>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title" data-i18n="about.sourcesTitle"></h2>
+        <p data-i18n="about.sourcesIntro"></p>
+        <ul class="sources">
+            <li><span data-i18n="techniques.4-7-8.name"></span>: <a href="https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/three-breathing-exercises-and-techniques/" target="_blank" rel="noopener">Dr. Andrew Weil</a></li>
+            <li><span data-i18n="techniques.box.name"></span>: <a href="https://time.com/4316151/breathing-technique-navy-seal-calm-focused/" target="_blank" rel="noopener">Mark Divine, Time</a></li>
+            <li><span data-i18n="techniques.equal.name"></span>: <a href="https://www.ekhartyoga.com/articles/practice/how-to-practice-samavritti-breath" target="_blank" rel="noopener">Ekhart Yoga</a></li>
+            <li><span data-i18n="techniques.coherent.name"></span>: <a href="https://www.ulaval.ca/mon-equilibre-ul/mes-habitudes-de-vie/coherence-cardiaque" target="_blank" rel="noopener">Université Laval</a></li>
+            <li><span data-i18n="about.research"></span>: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9873947/" target="_blank" rel="noopener">Balban et al., 2023</a>; <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9828383/" target="_blank" rel="noopener">Fincham et al., 2023</a></li>
+        </ul>
     </section>
 </main>
 </body>
